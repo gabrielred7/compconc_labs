@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1626661867 source:c:\users\gabriel almeida\documents\classroom\computação concorrente\laboratórios\lab1\atividade_5 - gabriel_almeida.c
+	<stdio.h>
+	<stdlib.h>
+	<pthread.h>
+	<math.h>
+
