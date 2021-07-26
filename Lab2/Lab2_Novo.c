@@ -1,13 +1,13 @@
-//Programação Concorrente (uso de threads)
+//Programacaoo Concorrente (uso de threads)
 /*Versao 4.0 - Definindo qual o numero de thread a se usar
 na saida, escolher o mais proximo ao numero de processadores.
-Com adicional de medição de tempo de execução*/
-//Problema de multiplicação de matrizes (considerando matrizes quadradas)
+Com adicional de medicao de tempo de execucao*/
+//Problema de multiplicacao de matrizes (considerando matrizes quadradas)
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <locale.h>
-#include "timer.h"
+#include <time.h>
 
 
 float *mat1; //matriz de entrada 1
@@ -27,7 +27,7 @@ void * tarefa(void *arg){
         for(int j=0; j<args->dim; j++){
             saida[(args->id)*(args->dim)+j] = 0;
             for(int k=0; k<args->dim; k++){
-                saida[(args->id)*(args->dim)+j] += mat1[(args->id)*(args->dim)+k] * mat2[(args->id)*(args->dim)+k];
+                saida[(args->id)*(args->dim)+j] += mat1[(args->id)*(args->dim)+k] * mat2[(k)*(args->dim)+j];
             }
         }
     }
@@ -40,9 +40,10 @@ int main (int argc, char* argv[]){
     pthread_t *tid; //identificadores das threads no sistema
     tArgs *args; //identificadores locais das threads e dimensao
 
-    double inicio, fim, delta;
-    GET_TIME(inicio);
+    clock_t inicio, fim;
+    double delta;
 
+    inicio = clock();
     //Avaliando os parametos de entrada da main
     if (argc < 3){
         printf("Digite: %s <dim da matris> <n de threads>\n", argv[0]);
@@ -52,7 +53,7 @@ int main (int argc, char* argv[]){
     nthreads = atoi(argv[2]); //transforma string para inteiro de cada n de threads
     if (nthreads > dim) nthreads = dim;
 
-    //alocação de memoria para as estruturas de dados principais
+    //alocacaoo de memoria para as estruturas de dados principais
     mat1 = (float *) malloc(sizeof(float) * dim * dim);
     if (mat1 == NULL){printf("ERRO--malloc\n"); return 2;}
     mat2 = (float *) malloc(sizeof(float) * dim * dim);
@@ -60,15 +61,20 @@ int main (int argc, char* argv[]){
     saida = (float *) malloc(sizeof(float) * dim * dim);
     if (saida == NULL){printf("ERRO--malloc\n"); return 2;}
 
-    //inicialização das estruturas de dados principais
+    //inicializacao das estruturas de dados principais
     for(int i=0; i<dim; i++){
         for(int j=0; j<dim; j++){
-            mat1[i*dim+j] = 4;  //equivalente mat[i][j]
-            mat2[i*dim+j] = 2;
+            mat1[i*dim+j] = 1;  //equivalente mat[i][j]
+            mat2[i*dim+j] = 1;
             saida[i*dim+j] = 0;
         }
     }
 
+    fim = clock();
+    delta = (double)(fim - inicio) * 1000.0 / CLOCKS_PER_SEC; 
+    printf("Tempo de inicializacao das estruturas de dados: %.f\n", delta);
+
+    inicio = clock();
     //multiplicacao da matriz pelo vetor
     //alocacao de memoria da estruturas de dado e das threads
     tid = (pthread_t*) malloc(sizeof(pthread_t)*dim*dim);
@@ -76,15 +82,8 @@ int main (int argc, char* argv[]){
     args = (tArgs*) malloc(sizeof(tArgs)*dim*dim);
     if(args==NULL){puts("ERRO--malloc");return 2;}
 
-    GET_TIME(fim);
-    delta = fim - inicio;
-    printf("Tempo de inicialização das estruturas de dados;: %.lf\n", delta);
-
-
-    GET_TIME(inicio);
-
     //criacao das threads
-    for(int i=0; i<dim; i++){
+    for(int i=0; i<nthreads; i++){
         (args+i)->id = i;
         (args+i)->dim = dim;
         if(pthread_create(tid+i, NULL, tarefa, (void*)(args+i))){
@@ -97,12 +96,11 @@ int main (int argc, char* argv[]){
         pthread_join(*(tid+i), NULL);
     }
 
-    GET_TIME(fim)
-    delta = fim - inicio;
-    printf("Tempo de criação das threads, execução da multiplicação, e termino das threads: %.lf\n", delta);
+    fim = clock();
+    delta = (double)(fim - inicio)* 1000.0 / CLOCKS_PER_SEC; 
+    printf("Tempo de criacao das threads, execucao da multiplicacao, e termino das threads: %.f\n", delta);
 
-
-    GET_TIME(inicio)
+    inicio = clock();
     /*
     //exibicao dos resultados
     puts("Primeira Matriz de Entrada:");
@@ -119,9 +117,8 @@ int main (int argc, char* argv[]){
         puts("");
     }
     */
-    puts("Valor Único de Identificação:");
-    printf("%.1f ", saida[dim]);
-    printf("Tudo certo!");
+
+    printf("Valor unico de Identificacao: %.2f ", saida[dim]);
     puts(" ");
 
     //liberacao da memoria
@@ -131,8 +128,8 @@ int main (int argc, char* argv[]){
     free(tid);
     free(args);
 
-    GET_TIME(fim)
-    delta = fim - inicio;
-    printf("Tempo de finalização do programa: %.lf\n", delta);
+    fim = clock();
+    delta = (double)(fim - inicio)* 1000.0 / CLOCKS_PER_SEC;
+    printf("Tempo de finalizacao do programa: %.f\n", delta);
     return 0;
 }
