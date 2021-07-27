@@ -82,7 +82,7 @@ int main (int argc, char* argv[]){
     args = (tArgs*) malloc(sizeof(tArgs)*dim*dim);
     if(args==NULL){puts("ERRO--malloc");return 2;}
 
-    //criacao das threads
+    //criação das threads
     for(int i=0; i<nthreads; i++){
         (args+i)->id = i;
         (args+i)->dim = dim;
