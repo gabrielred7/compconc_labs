@@ -1,7 +1,4 @@
-//Programacaoo Concorrente (uso de threads)
-/*Versao 4.0 - Definindo qual o numero de thread a se usar
-na saida, escolher o mais proximo ao numero de processadores.
-Com adicional de medicao de tempo de execucao*/
+/*Programa da Atividade 1 do Lab2*/
 //Problema de multiplicacao de matrizes (considerando matrizes quadradas)
 #include <stdio.h>
 #include <stdlib.h>
