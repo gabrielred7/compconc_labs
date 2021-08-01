@@ -69,7 +69,7 @@ int main(int argc, char *argv[]){
     float tSegredo;
     pthread_t *tid; //identificadores das threads no sistema
     tArgs *retorno; //valor de retorno das threads
-    float vetorMax[nthreads], vetorMin[nthreads];
+    float maxmin[nthreads];
 
     clock_t inic, fim; //tomada de tempo
     double delta = 0;
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]){
     sequencial();
     fim = clock();
 
-    delta = (double)(fim - inic) / CLOCKS_PER_SEC; 
+    delta = (double)(fim - inic) * 1000 / CLOCKS_PER_SEC; 
     printf("Tempo de sequencial: %.5lf\n", delta);
     
     /*------------------------------------------------------------------------------------------------*/
@@ -127,27 +127,24 @@ int main(int argc, char *argv[]){
         if(pthread_join(*(tid+i), (void**) &retorno)){ //o segundo argumento é o retorna da função
             fprintf(stderr, "ERRO--pthread_join\n"); return 3;            
         }
-        vetorMax[i] = retorno->maiorLocal;
-        vetorMin[i] = retorno->menorLocal;
-        free(retorno);
-    }
-
-    maiorConc = vetorMax[0];
-    for(long int j = 0; j < sizeof(vetorMax); j++){
-        if (vetorMax[j] > maiorConc){
-            maiorConc = vetorMax[j];
-        }
-    }
-
-    menorConc = vetorMin[0];
-    for(long int k = 0; k < sizeof(vetorMin); k++){
-        if (vetorMin[k] < menorConc){
-            menorConc = vetorMin[k];
-        }
+        
+        if (i == 0){
+            maxmin[0] = retorno->maiorLocal;
+            maxmin[1] = retorno->menorLocal;
+        }else{
+            if (maxmin[0] > retorno->menorLocal){
+                maxmin[0] = retorno->menorLocal;
+                menorConc = maxmin[0];
+            }
+            if (maxmin[1] < retorno->maiorLocal){
+                maxmin[1] = retorno->maiorLocal;
+                maiorConc = maxmin[1];
+            } 
+        } 
     }
 
     fim = clock();
-    delta = (double)(fim - inic) / CLOCKS_PER_SEC; 
+    delta = (double)(fim - inic) * 1000/ CLOCKS_PER_SEC; 
     printf("Tempo de concorrente: %.5lf\n", delta);
     
     /*------------------------------------------------------------------------------------------------*/
