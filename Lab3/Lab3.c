@@ -11,8 +11,10 @@
 long long int N; // n de elementos do vetor
 int nthreads; // numero de threads
 float *vetor; // vetor de entrada com dimensao dim 
+
 float maiorSeq, menorSeq = 0;
 float maiorConc, menorConc = 0;
+
 typedef struct {
     float maiorLocal; 
     float menorLocal;
@@ -20,16 +22,13 @@ typedef struct {
 
 // Função da Forma Sequencial
 void sequencial(){
-    for(long int i=0; i<N; i++){
-        if (i == 0){
-            maiorSeq = menorSeq = vetor[i];
-        } else {
-            if (vetor[i] > maiorSeq){
-                maiorSeq = vetor[i];
-            }
-            if (vetor[i] < menorSeq){
-                menorSeq = vetor[i];
-            }
+    maiorSeq = menorSeq = vetor[0];
+    for(long int i=0; i<N; i++){            
+        if (vetor[i] > maiorSeq){
+            maiorSeq = vetor[i];
+        }
+        if (vetor[i] < menorSeq){
+            menorSeq = vetor[i];
         }
     }
 }
@@ -47,12 +46,12 @@ void * tarefa(void * arg){
     args = (tArgs*) malloc(sizeof(tArgs));
     if(args == NULL){fprintf(stderr, "ERRO--malloc--args \n"); exit(1);}
     
-    args->maiorLocal = args->menorLocal = 0;
+    //Tem que ser com o primeiro elemento do bloco do vetor tratado pela thread
+    args->maiorLocal = args->menorLocal = vetor[inicial];
     if (id == nthreads - 1){final = N;} // tratamento do final. caso eu seja a ultima thread
     else {final = inicial + tamBloco;} //trata o resto se houver
     
-    //soma os elementos do bloco da thread e depois junta num local so
-    args->maiorLocal = args->menorLocal = vetor[inicial];
+    //iteração principal
     for (long int i=inicial+1; i<final; i++){
         if (vetor[i] > args->maiorLocal){
             args->maiorLocal = vetor[i];
@@ -69,7 +68,6 @@ int main(int argc, char *argv[]){
     float tSegredo;
     pthread_t *tid; //identificadores das threads no sistema
     tArgs *retorno; //valor de retorno das threads
-    float maxmin[nthreads];
 
     clock_t inic, fim; //tomada de tempo
     double delta = 0;
@@ -82,6 +80,8 @@ int main(int argc, char *argv[]){
     N = atoll(argv[1]); //atoll converte string para long long int
     nthreads = atoi(argv[2]);
 
+    float maxmin[nthreads];
+
     //aloca o vetor de entrada
     vetor = (float*) malloc(sizeof(float) * N); //malloc converte ponteiro para void
     if (vetor == NULL){fprintf(stderr, "Erro--malloc--vetor\n"); return 2;}
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]){
     for(long int i=0; i<N; i++){
         tSegredo = (float) rand() / RAND_MAX * 100;
         vetor[i] = tSegredo;
-        //printf( "%.2f ", tSegredo);
+        printf( "%.2f ", tSegredo);
     }
     printf("\n");
 
@@ -129,8 +129,8 @@ int main(int argc, char *argv[]){
         }
         
         if (i == 0){
-            maxmin[0] = retorno->maiorLocal;
-            maxmin[1] = retorno->menorLocal;
+            maxmin[0] = maiorConc = retorno->maiorLocal;
+            maxmin[1] = menorConc = retorno->menorLocal;
         }else{
             if (maxmin[0] > retorno->menorLocal){
                 maxmin[0] = retorno->menorLocal;
