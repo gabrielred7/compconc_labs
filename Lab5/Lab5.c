@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include <stdbool.h>
 
 /* Variaveis Globais */
 int tBloqueadas = 0;
@@ -9,8 +10,7 @@ pthread_mutex_t x_mutex;
 pthread_cond_t x_cond;
 
 int nthreads; // numero de threads
-float *vetor; // vetor de entrada com dimensao dim
-int somaGlobal = 0;
+int *vetor; // vetor de entrada com dimensao dim
 
 // Funcao Barreira
 void barreira(int nthreads){
@@ -28,18 +28,23 @@ void barreira(int nthreads){
 
 //funcao thread
 void * tarefa(void * arg){
-    int id = *(int*)arg;
+    int id = *(int*)arg; //thread atual
     int somaLocal = 0;
-    for (int k = 0; k < nthreads; k++){
-        somaLocal += vetor[k];
-        printf("Thread %d tem somatorio = %d\n", id, somaLocal); 
+    for (int l = 0; l < nthreads; l++){
+        for (int k = 0; k < nthreads; k++){
+            somaLocal += vetor[k];
+        }
+        barreira(nthreads);
+        int sortear = rand();
+        vetor[id] = (id * sortear) % 10;
+        barreira(nthreads);
     }
-    somaGlobal+=somaLocal;
-    barreira(nthreads);
-    pthread_exit(NULL);
+    pthread_exit((void*) somaLocal);
 }
 
 int main(int argc, char *argv[]){
+    pthread_mutex_init(&x_mutex, NULL);
+    pthread_cond_init(&x_cond, NULL);
     //recebe e valida os parametros de entrada (n do vetor, n de threads)
     if(argc < 2){
         fprintf(stderr, "Digite: %s <n de threads>\n", argv[0]);
@@ -51,9 +56,10 @@ int main(int argc, char *argv[]){
     vetor[nthreads];
     pthread_t threads[nthreads];
     int id[nthreads];
+    int *retorno; //valor de retorno das threads
 
     //aloca o vetor de entrada
-    vetor = (float*) malloc(sizeof(float) * nthreads); //malloc converte ponteiro para void
+    vetor = (int*) malloc(sizeof(int) * nthreads); //malloc converte ponteiro para void
     if (vetor == NULL){fprintf(stderr, "Erro--malloc--vetor\n"); return 2;}
 
     srand(time(NULL));
@@ -63,6 +69,12 @@ int main(int argc, char *argv[]){
         printf( "%d ", tSegredo);
     }
     printf("\n");
+    
+    retorno = (int*) malloc(sizeof(int));
+    if(retorno == NULL){puts("ERRO--malloc--retorno\n"); return 2;}
+
+    long int vetorSomas[nthreads];
+    long int pos = 0;
 
     //criação thread
     for(long int i=0; i<nthreads; i++){
@@ -74,12 +86,27 @@ int main(int argc, char *argv[]){
 
     //aguardar o termino das threads
     for(long int i=0; i<nthreads; i++){
-        if(pthread_join(threads[i], NULL)){ //o segundo argumento é o retorna da função
+        if(pthread_join(*(threads+i),  (void**) &retorno[i])){ //o segundo argumento é o retorna da função
             fprintf(stderr, "ERRO--pthread_join\n"); return 3;            
         }
+        printf("Para a thread %d temos %d. \n", i, retorno[i]);
+        free(retorno);
     }
+
+    bool corretude = false;
+    for(int v = 0; v<nthreads-1; v++){
+        if(retorno[v] != retorno[v+1]){
+            corretude = true;
+    }
+
+    if (corretude){
+        printf("Todos os valores recebidos sao iguais");
+    }else{
+        printf("Todos os valores recebidos nao sao iguais");
+    }
+    
+
     //libera a memoria alocada
     free(vetor);
-    free(threads);
     return 0;
 }
