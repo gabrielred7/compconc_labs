@@ -14,7 +14,7 @@ public class Compartilhado {
         return this.soma; 
     }
     
-    public synchronized void incR(int contar) { 
-        this.soma += contar;
+    public synchronized void incR(int contagem) { 
+        this.soma += contagem;
     }
 }

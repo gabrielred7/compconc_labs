@@ -20,7 +20,7 @@ public class Lab6 {
       
       //imprimir
       for (int pos = 0; pos < vetorInteiros.length; pos++) {
-          System.out.println(pos+1 + " " + vetorInteiros[pos]);
+          System.out.println(pos + " " + vetorInteiros[pos]);
       }
       
       //reserva espaaço para um vetor de threads
