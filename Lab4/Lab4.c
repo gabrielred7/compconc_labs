@@ -18,6 +18,7 @@ pthread_cond_t status_cond_final;
 //T1 -> Fique a vontade.
 void *A (void *T){
     pthread_mutex_lock(&status_mutex);
+
     if (status == 0){
         pthread_cond_wait(&status_cond_inicio, &status_mutex);
     }
@@ -27,20 +28,21 @@ void *A (void *T){
         printf("A:  status = %d, vai sinalizar a condicao \n", status);
         pthread_cond_signal(&status_cond_final);
     }
-    pthread_mutex_unlock(&status_mutex); 
+    pthread_mutex_unlock(&status_mutex);
+
     pthread_exit(NULL);
 }
 
 //T2 -> Seja bem-vindo!
 void *B (void *T){
     printf("Seja bem-vindo!\n");
-
     pthread_mutex_lock(&status_mutex);
+
     status++;
     printf("B: status = %d, vai sinalizar a condicao \n", status);
     pthread_cond_broadcast(&status_cond_inicio);
-    pthread_mutex_unlock(&status_mutex);
 
+    pthread_mutex_unlock(&status_mutex);
     pthread_exit(NULL);
 }
 
@@ -76,7 +78,6 @@ void *D (void *T){
 
 
 int main(int argc, char *argv[]) {
-    
     pthread_t threads[NTHREADS];
   
     /* Inicilaiza o mutex (lock de exclusao mutua) e a variavel de condicao */
