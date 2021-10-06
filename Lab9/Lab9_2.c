@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <semaphore.h>
 
 #define N 5 //tamanho do buffer
 #define P 2 //qtd de threads produtoras
@@ -21,8 +22,9 @@ int out;
 //auxiliares, permitem dar informações de estado do buffer
 
 //variaveis para sincronização
-pthread_mutex_t mutex; //variavel de exclusao mutua
-pthread_cond_t cond_cons, cond_prod; //variaveis de condição
+//pthread_mutex_t mutex; //variavel de exclusao mutua
+//pthread_cond_t cond_cons, cond_prod; //variaveis de condição
+sem_t cons, prod; //variaveis de semaforo
 
 //inicializa o buffer
 void IniciaBuffer(int n){
@@ -38,62 +40,19 @@ void ImprimeBuffer(int n){
     }
     printf("\n");
 }
-/*
-//insere um elemento no Buffer ou bloqueia a thread caso o Buffer esteja cheio
-void Insere(int item, int id){
-    pthread_mutex_lock(&mutex);
-    printf("P[%d] quer inserir\n", id);
-    while (count == N){
-        printf("P[%d] bloqueou\n", id);
-        pthread_cond_wait(&cond_prod, &mutex);
-        printf("P[%d] desbloqueou\n", id);
-    }
-    Buffer[in] = item;
-    in = (in + 1) % N;
-    count++;
-    printf("P[%d] inseriu\n", id);
-    ImprimeBuffer(N);
-    pthread_mutex_unlock(&mutex);
-    pthread_cond_signal(&cond_cons);
-}*/
-/*
-//retira um elemento no Buffer ou bloqueia a thread caso o Buffer esteja vazio
-int Retira(int id){
-    int item;
-    pthread_mutex_lock(&mutex);
-    printf("C[%d] quer consumir\n", id);
-    while (count == 0){
-        printf("C[%d] bloqueou\n", id);
-        pthread_cond_wait(&cond_prod, &mutex);
-        printf("C[%d] desbloqueou\n", id);
-    }
-    if (count == N){
-        for (out = 0; out < N; out++){
-            item = Buffer[out];
-            Buffer[out] = 0;
-            count--;
-        }
-        printf("C[%d] consumiu %d\n", id, item);
-    } else {
-        printf("Nada foi consumido\n");
-    }
-    ImprimeBuffer(N);
-    pthread_mutex_unlock(&mutex);
-    pthread_cond_signal(&cond_cons);
-    return item;
-}
-*/
+
 //thread produtora
 void *produtor(void * arg){
     int *id = (int *) arg;
     printf("Sou a thread produtora %d\n", *id);
     while (1){
+        sem_wait(&prod);
         int item = *(int *) arg;
-        pthread_mutex_lock(&mutex);
         printf("P[%d] quer inserir\n", *id);
-        while (count == N){
+        if (count == N){
             printf("P[%d] bloqueou\n", *id);
-            pthread_cond_wait(&cond_prod, &mutex);
+            sem_post(&cons);
+            sem_wait(&prod);
             printf("P[%d] desbloqueou\n", *id);
         }
         Buffer[in] = item;
@@ -101,9 +60,7 @@ void *produtor(void * arg){
         count++;
         printf("P[%d] inseriu\n", *id);
         ImprimeBuffer(N);
-        pthread_mutex_unlock(&mutex);
-        pthread_cond_signal(&cond_cons);
-        
+        sem_post(&prod);
         sleep(1);
     }
     free(arg);
@@ -115,27 +72,17 @@ void *consumidor(void * arg){
     int *id = (int *) arg;
     printf("Sou a thread consumidora %d\n", *id);
     while (1){
+        sem_wait(&cons);
         int item;
-        pthread_mutex_lock(&mutex);
         printf("C[%d] quer consumir\n", *id);
-        while (count == 0){
-            printf("C[%d] bloqueou\n", *id);
-            pthread_cond_wait(&cond_prod, &mutex);
-            printf("C[%d] desbloqueou\n", *id);
-        }
-        if (count == N){
-            for (out = 0; out < N; out++){
-                item = Buffer[out];
-                Buffer[out] = 0;
-                count--;
-            }
+        for (out = 0; out < N; out++){
+            item = Buffer[out];            
             printf("C[%d] consumiu %d\n", *id, item);
-        } else {
-            printf("Nada foi consumido\n");
+            Buffer[out] = 0;
+            count--;
         }
-        ImprimeBuffer(N);
-        pthread_mutex_unlock(&mutex);
-        pthread_cond_signal(&cond_cons);        
+        ImprimeBuffer(N);        
+        sem_post(&prod);
         sleep(1);
     }
     free(arg);
@@ -161,10 +108,9 @@ int main(void){
     //inicializa o Buffer
     IniciaBuffer(N);
 
-    //inicializa as variaveis de sincronizacao
-    pthread_mutex_init(&mutex, NULL);
-    pthread_cond_init(&cond_cons, NULL);
-    pthread_cond_init(&cond_prod, NULL);
+    //inicia os semaforos
+    sem_init(&cons, 0, 0);
+    sem_init(&prod, 0, 1);
 
     //cria as threads produtoras
     for (i = 0; i < P; i++){
